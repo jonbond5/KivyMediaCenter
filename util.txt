@@ -1,0 +1,2 @@
+/list,playlist1.csv
+/song,Afterglow.wav
