@@ -21,7 +21,7 @@ from csv import writer,reader,QUOTE_NONE
 import datetime
 from tempfile import NamedTemporaryFile
 import shutil
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
 
 
 directory = getcwd()
@@ -818,11 +818,12 @@ Builder.load_string("""
 class MediaCenterApp(App):
 
     def turnOnLights(self):
-        GPIO.output(18,True)
+        #GPIO.output(18,True)
+        pass
 
     def quit(self):
-        GPIO.output(18,False)
-        GPIO.cleanup()
+        #GPIO.output(18,False)
+        #GPIO.cleanup()
         self.stop()
 
     sm = ScreenManager()
@@ -838,8 +839,8 @@ class MediaCenterApp(App):
     #Window.borderless = True
 
     def build(self):
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(18,GPIO.OUT)
+        #GPIO.setmode(GPIO.BCM)
+        #GPIO.setup(18,GPIO.OUT)
         return self.sm
 
 MediaCenterApp().run()
