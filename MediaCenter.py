@@ -1,6 +1,3 @@
-#CS 105 Extra credit
-
-# 65536 = 2^16
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.button import Button
@@ -24,9 +21,10 @@ from csv import writer,reader,QUOTE_NONE
 import datetime
 from tempfile import NamedTemporaryFile
 import shutil
+import RPi.GPIO as GPIO
 
 
-directory = 'C:\\Users\\Jonathan\\Desktop\\kivy media Center'
+directory = getcwd()
 chdir(directory)
 
 ###########################################################################
@@ -175,7 +173,7 @@ class AudioScreen(Screen):
             self.song.unload()
             Clock.unschedule(self.seekTracker)
         # Build path and load
-        soundString = getcwd() + '\\Songs\\' + songToPlay
+        soundString = getcwd() + '/Songs/' + songToPlay
         self.song = SoundLoader.load(soundString)
 
         # Build string for song label
@@ -355,13 +353,15 @@ class PlaylistScreen(Screen):
 
     # Builds songs layout with buttons that run audio terminal
     def buildSongsList(self,filename,*args):
+        print(filename,len(filename))
+        filename = filename[:-1]
         self.songs.clear_widgets()
         self.scroll.clear_widgets()
         if filename[-3:-1] != 'csv':
             filename += '.csv'
         with open(filename,'r') as file:
             for row in file:
-                btn = Button(text=row[:-5],size_hint_y=None,
+                btn = Button(text=row[:-6],size_hint_y=None,
                              height=35,color=(0,1,1,0.9),
                              background_color=(1,1,1,0),
                              on_release=partial(self.audioUnpackTerminal,row[:-1],filename))
@@ -457,7 +457,18 @@ class PlaylistScreen(Screen):
 
 
 class SettingsScreen(Screen):
-    pass
+    
+    localTime = StringProperty()
+    
+    def __init__(self,**kwargs):
+        super(SettingsScreen,self).__init__(**kwargs)
+        Clock.schedule_interval(self.updateTime,60)
+        self.updateTime()
+
+    
+    def updateTime(self,*args):
+        self.localTime = Timer().getTime()
+
 
 class MainMenu(Widget):
     pass
@@ -478,7 +489,7 @@ Builder.load_string("""
     size:250,80
     background_color:0,0,0,0
     color:1,0,0,1
-    font_name:'fonts/KenneySpace.ttf'
+    font_name:'Fonts/KenneySpace.ttf'
     font_size:24
     text:'Audio'
     pos:0,0
@@ -489,7 +500,7 @@ Builder.load_string("""
     size:250,80
     background_color:0,0,0,0
     color:1,0,0,1
-    font_name:'fonts/KenneySpace.ttf'
+    font_name:'Fonts/KenneySpace.ttf'
     font_size:24
     text:'Home'
     pos:275,0
@@ -500,7 +511,7 @@ Builder.load_string("""
     size:250,80
     background_color:0,0,0,0
     color:1,0,0,1
-    font_name:'fonts/KenneySpace.ttf'
+    font_name:'Fonts/KenneySpace.ttf'
     font_size:24
     text:'Settings'
     pos:550,0
@@ -550,7 +561,7 @@ Builder.load_string("""
     AudioButton:
     MainButton:
     UtilButton:
-
+   
     Label:
         size_hint:None,None
         size:50,50
@@ -755,10 +766,64 @@ Builder.load_string("""
         font_size:24
         on_release:root.cancelEditing()
 
+
+<SettingsScreen>:
+    canvas:
+        Rectangle:
+            size:self.size
+            source:'Acura_Logo.jpg'
+        Color:
+            rgba:0,0,0,1
+        Rectangle:
+            size:800,80
+            pos:0,0
+        Ellipse:
+            pos:510,400
+            size:100,100
+        Rectangle:
+            pos:560,400
+            size:250,100
+
+    Button:
+        size_hint:None,None
+        size:400,100
+        pos:100,100
+        font_size:58
+        text:"Change Lights"
+        background_color:0,0,0,0
+        color:0,.75,.75,1
+        on_release:app.turnOnLights()
+    Button:
+        size_hint:None,None
+        size:100,100
+        pos:400,250
+        on_press:app.quit()
+
+
+    Label:
+        size_hint:None,None
+        size:50,50
+        pos:650,420
+        font_name:'Fonts/DAGGERSQUARE.otf'
+        font_size:56
+        text:root.localTime
+
+    AudioButton:
+    MainButton:
+    UtilButton:
+
 """)
 
 
 class MediaCenterApp(App):
+
+    def turnOnLights(self):
+        GPIO.output(18,True)
+
+    def quit(self):
+        GPIO.output(18,False)
+        GPIO.cleanup()
+        self.stop()
 
     sm = ScreenManager()
     sm.add_widget(MainScreen(name='main'))
@@ -767,10 +832,14 @@ class MediaCenterApp(App):
     sm.add_widget(PlaylistScreen(name='playlist'))
 
     #Constructor
-    Window.size = (800,480) #Adjusts window size and removes border
+    #Window.size = (800,480) #Adjusts window size and removes border
+
+    #Window.size = (480,360)
     #Window.borderless = True
 
     def build(self):
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(18,GPIO.OUT)
         return self.sm
 
 MediaCenterApp().run()
